@@ -6,9 +6,12 @@ import threading
 import multiprocessing as mp
 
 
-p2_temp_threshold = 0.7
-x1, y1 = 960,20
-x2, y2 = 1080, 105
+p2_temp_threshold = 0.75
+# x1, y1 = 960,20
+# x2, y2 = 1080, 105
+
+p1_coords = 20,40,80,90 # 10,20,100,100 # x1,y1,x2,y2
+p2_coords = 980,40,1046,90 # 970,20,1060,100
 
 batch_size = 16 # how many frames get checked at once (thread count!)
 batch_item_length = 30 # frames long
@@ -20,8 +23,10 @@ game_start_frames = False
 
 
 
-def process_frame(frame, frame_number, template):
+def process_frame(frame, frame_number, template, region_of_interest):
     global game_start_times
+
+    x1,y1,x2,y2 = region_of_interest
 
     roi = frame[y1:y2, x1:x2]
 
@@ -42,7 +47,7 @@ def process_video():
     vid_path = "./media/sample_0001.mkv"
     capture = cv.VideoCapture(vid_path)
     # capture = cv.VideoCapture("../obs_rec/aop-10_5_23/sample_Trim.mp4")
-    p2_template = "./media/p2_template.png"
+    p2_template = "./media/p2.png"
     p2_template = cv.imread(p2_template)
     p2_template = cv.cvtColor(p2_template, cv.COLOR_BGR2GRAY)  # convert to grayscale
     p2_t_h, p2_t_w = p2_template.shape[::1]
@@ -80,7 +85,7 @@ def process_video():
             for f in frames:
                 if f is not None:
                     # print(f"Thread for frame {f[0]} starting...")
-                    t = threading.Thread(target=process_frame, args=(f[1], f[0], p2_template))
+                    t = threading.Thread(target=process_frame, args=(f[1], f[0], p2_template, p2_coords))
                     threads.append(t)
                     t.start()
             
