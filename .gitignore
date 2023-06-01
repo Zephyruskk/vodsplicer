@@ -1,3 +1,6 @@
 .*
 media/*
 !.gitignore
+*.png
+*.mp4
+test.py
