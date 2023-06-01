@@ -1,7 +1,9 @@
 import sys, datetime, time, logging
 import cv2 as cv
 import numpy as np
-import pytesseract
+# import pytesseract
+import easyocr
+import pandas as pd
 import threading
 import multiprocessing as mp
 
@@ -9,6 +11,12 @@ import multiprocessing as mp
 temp_threshold = 0.75
 # x1, y1 = 960,20
 # x2, y2 = 1080, 105
+
+p1_char_coords = 120,0,960,150
+p2_char_coords = 1080,0,1919,150
+
+p1_tag_coords = 0,150,275,215
+p2_tag_coords = 960,150,1235,215
 
 go_coords = 495,195,1305,505 
 p1_coords = 20,40,80,90 # 10,20,100,100 # x1,y1,x2,y2
@@ -54,7 +62,7 @@ def process_frame(frame, frame_number, templates, region_of_interest):
 # load in keyframes, batch_size at a time
 def process_video():
 
-    vid_path = "./media/sample_0001.mkv"
+    vid_path = "./media/sample_0003.mkv"
     go_path = "./media/go.png"
     p1_path = "./media/p1.png"
     p2_path = "./media/p2.png"
@@ -126,10 +134,40 @@ def process_video():
     # post processing
     for i in range(len(game_start_times))[1:][::-1]: # cut off zero index, then reverse order
         if game_start_times[i][0] - game_start_times[i-1][0] < fps*5: # if game start is within 5 seconds of the last game start, get rid of it
-            game_start_times.pop(i)
+            game_start_times.pop(i-1) # take the LATEST frame found to get the clearest possible frame 
     
     capture.release()
     cv.destroyAllWindows()
+
+def scrape_keyframe(frame, reader):
+
+    # get character names + tags
+    x1,y1,x2,y2 = p1_char_coords
+    p1_char_roi = frame[y1:y2, x1:x2]
+    x1,y1,x2,y2 = p1_tag_coords
+    p1_tag_roi = frame[y1:y2, x1:x2]
+
+    x1,y1,x2,y2 = p2_char_coords
+    p2_char_roi = frame[y1:y2, x1:x2]
+    x1,y1,x2,y2 = p2_tag_coords
+    p2_tag_roi = frame[y1:y2, x1:x2]
+
+    rois = [p1_char_roi, p2_char_roi, p1_tag_roi, p2_tag_roi]
+    save_strings = ["Player 1 Character", "Player 2 Character", "Player 1", "Player 2"]
+
+    for i in range(len(rois)):
+        gray = cv.cvtColor(rois[i], cv.COLOR_BGR2GRAY)
+        noise = cv.medianBlur(gray, 3)
+        threshold = cv.threshold(noise, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+        try:
+            result = reader.readtext(threshold, paragraph="False", detail=0)
+            print(result)
+            save_strings[i] = result[0]
+        except:
+            print("No text found! No tag used?")
+    
+    return [(save_strings[0], save_strings[2]), (save_strings[1], save_strings[3])]
+    
 
 if __name__ == '__main__':
 
@@ -142,9 +180,17 @@ if __name__ == '__main__':
 
     sorted_start_times = sorted(game_start_times, key=lambda x: x[0])
 
+    # pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
+
+    reader = easyocr.Reader(['en'])
+
     for f,val,image in sorted_start_times:
         datetime_start_time = datetime.timedelta(seconds=f)
         print(f"Game start at : {datetime_start_time}. Conf Value: {val}")
+
+        print(scrape_keyframe(image, reader))
+        # cv.imshow(f"{datetime_start_time}", image)
+        # key = cv.waitKey(0) & 0xFF
 
     elapsed_time = end_time - start_time
     print(f"Elapsed: {elapsed_time}")

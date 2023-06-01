@@ -5,7 +5,7 @@ def save_frame(frame, filename):
     print(f"Frame saved as {filename}")
 
 def main():
-    video_path = "C:/Users/zscot/Videos/vodfixer/media/sample_0002.mkv"
+    video_path = "C:/Users/zscot/Videos/vodfixer/media/sample_0001.mkv"
     capture = cv.VideoCapture(video_path)
 
     frame_count = 0
