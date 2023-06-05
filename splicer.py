@@ -84,6 +84,8 @@ def main():
 
     for cmd in cmds:
         trim_video(cmd['source file'], cmd['start time'], cmd['end time'], cmd['output file'])
+    
+    print('\n\nSplicer done!')
 
 
 if __name__ == '__main__':
