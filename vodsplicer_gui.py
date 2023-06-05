@@ -16,7 +16,7 @@ class Application(tk.Tk):
         self.button_splicer.pack(pady=(15,0))
         label_output = tk.Label(self, text="Standard Output:")
         label_output.pack(pady=(20,0))
-        self.output_text = tk.Text(self, height=7, width=50, bg="black", fg="white", font=("Courier", 10))        
+        self.output_text = tk.Text(self, height=7, width=50, bg="black", fg="white", font=("Courier", 10))
         self.output_text.pack()
 
     def select_input_analyzer(self):
@@ -45,6 +45,7 @@ class Application(tk.Tk):
                 self.update_output_text(output)
 
     def run_analyzer(self, file_path):
+        self.update_output_text(f"Analyzing f{file_path} \nPlease be patient as this may take a while...\n")
         command = ["python", "analyzer.py", file_path]
         process = Popen(command, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
         threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
@@ -54,6 +55,7 @@ class Application(tk.Tk):
         process = Popen(command, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
         threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
 
+    
 
 if __name__ == "__main__":
     app = Application()
