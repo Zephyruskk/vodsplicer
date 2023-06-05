@@ -1,10 +1,12 @@
-import sys, datetime, time, logging
+import sys, datetime, time, logging, csv
 import cv2 as cv
 import numpy as np
 import pytesseract
 import pandas as pd
 import threading
 import multiprocessing as mp
+import Levenshtein
+from pathlib import Path
 
 fps, frame_count = 0,0 # globals, for later
 temp_threshold = 0.75 # template threshold, be above this to clock player icons
@@ -30,7 +32,7 @@ batch_size = 16 # how many frames get checked at once (thread count!)
 batch_item_length = 30 # frames long
 
 # file paths
-vid_path = "./media/sample_0001.mkv"
+source_vid_path = "./media/sample_0001.mkv"
 go_path = "./media/go.png"
 p1_path = "./media/p1.png"
 p2_path = "./media/p2.png"
@@ -59,7 +61,7 @@ def process_frame(frame, frame_number, templates, region_of_interest):
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
 
         if max_val >= temp_threshold:
-            game_starts.append((frame_number, max_val, frame))
+            game_starts.append([frame_number, max_val, frame])
             return True # match found 
         
     return False # no match found
@@ -70,7 +72,7 @@ def process_frame(frame, frame_number, templates, region_of_interest):
 def process_video():
     global fps, frame_count, game_starts
 
-    capture = cv.VideoCapture(vid_path)
+    capture = cv.VideoCapture(source_vid_path)
     
     # reading in templates
     go_template = cv.imread(go_path)
@@ -150,13 +152,19 @@ def scrape_keyframe(frame):
 
     rois = [p1_char_roi, p2_char_roi, p1_tag_roi, p2_tag_roi]
     save_strings = ["Player 1 Character", "Player 2 Character", "Player 1", "Player 2"]
-
+    config = r''
     for i in range(len(rois)):
+        if i > 1: config = r'--psm 7'
         gray = cv.cvtColor(rois[i], cv.COLOR_BGR2GRAY)
         noise = cv.medianBlur(gray, 3)
-        threshold = cv.threshold(noise, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+        threshold = cv.threshold(noise, 175, 255, cv.THRESH_BINARY)[1]
+
+        # cv.imshow(save_strings[i], threshold)
+        # key = cv.waitKey() & 0xFF
+        # cv.destroyAllWindows()
+
         try:
-            result = pytesseract.image_to_string(threshold)
+            result = pytesseract.image_to_string(threshold, config=config)
             save_strings[i] = result.strip()
         except:
             print("No text found! No tag used?")
@@ -166,27 +174,41 @@ def scrape_keyframe(frame):
 ################################################################################################################################
 ################################################################################################################################
 
-def calculate_image_clarity(image):
-    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    laplacian = cv.Laplacian(gray, cv.CV_64F)
-    variance = np.var(laplacian)
-    min_c = np.min(gray)
-    max_c = np.max(gray)
-    contrast = (max_c - min_c)/(max_c + min_c)
-    return (variance, contrast)
+# returns index of the best match of strings from a group (lowest Levenshtein distance)
+def average_string(group):
+    avg_distances = []
+
+    for i,string1 in enumerate(group):
+        total_dist = 0
+        for j,string2 in enumerate(group):
+            if i != j:
+                distance = Levenshtein.distance(string1, string2)
+                total_dist += distance
+        avg_dist = total_dist / (len(group) - 1)
+        avg_distances.append(avg_dist)
+    
+    return avg_distances.index(min(avg_distances))
 
 ################################################################################################################################
 ################################################################################################################################
 
 if __name__ == '__main__':
+    pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
 
     start_time = time.time()
 
     process_video()
 
     sorted_start_times = sorted(game_starts, key=lambda x: x[0])
+
+    # scrape keyframes w pytesseract
+    for i,frame in enumerate(sorted_start_times):
+        f,val,image = frame
+        # datetime_start_time = datetime.timedelta(seconds=(f/60))
+        # print(f"Game start at : {datetime_start_time}. Conf Value: {val}")
+        sorted_start_times[i].append(scrape_keyframe(image)) # formatted as [[Player 1 char, Player 1 tag], [Player 2 char, Player 2 tag]]
     
-    # post processing: group frames into arrays
+    # post processing: group frames into arrays by proximity
     game_start_groupings = []
     s = 0
     for i in range(len(game_starts))[:-1]:
@@ -195,49 +217,71 @@ if __name__ == '__main__':
             s = i+1
     game_start_groupings.append(game_starts[s:])
 
-    output_filename = r'C:/Users/zscot/Videos/vodfixer/measures2.mp4'
-    codec = cv.VideoWriter_fourcc(*'mp4v')  # Choose the codec (e.g., 'XVID' for AVI, 'mp4v' for MP4)
-    fps = 30.0  # Frames per second
-    frame_width = 1920  # Width of the frames
-    frame_height = 1080  # Height of the frames    # post processing
-    out = cv.VideoWriter(output_filename, codec, fps, (frame_width, frame_height))
+    final_starts = [] 
+    '''FINAL, clean data
+    @0 -- Frame Number
+    @1 -- [Player 1 char, Player 1 tag]
+    @2 -- [Player 2 char, Player 2 tag]
+    @3 -- Frame (np array)
+    '''
+    for g in game_start_groupings:
+        #0 frame number
+        starting_frame_number = g[0][0]
 
-    font = cv.FONT_HERSHEY_SIMPLEX
-    font_scale = 1.0
-    font_color = (0, 255, 0)  # BGR color tuple
-    line_thickness = 2
+        #1, #2 player info
+        scraped = [frame[3] for frame in g] # list comprehension bs incoming (HE DID NOT PLAN AHEAD)
+        p1_char_samples, p1_tag_samples, p2_char_samples, p2_tag_samples = [s[0][0] for s in scraped], [s[0][1] for s in scraped], [s[1][0] for s in scraped], [s[1][1] for s in scraped]
 
-    for i in range(len(game_start_groupings)):
-        g = [frame[2] for frame in game_start_groupings[i]]
-        for f in g:
-            v,c = calculate_image_clarity(f)
-            cv.rectangle(f, (45,600),(350, 850), (0,0,0), cv.FILLED)
-            cv.putText(f, f"Group: {i}", (50,650), font, font_scale, font_color, line_thickness)
-            cv.putText(f, f"Variance: {v}", (50,700), font, font_scale, font_color, line_thickness)
-            cv.putText(f, f"Contrast: {c}", (50,750), font, font_scale, font_color, line_thickness)
-            out.write(f)
-    
-    out.release()
-    
-    exit()
+        p1_char_i = average_string(p1_char_samples)
+        p1_tag_i = average_string(p1_tag_samples)
+        p2_char_i = average_string(p2_char_samples)
+        p2_tag_i = average_string(p2_tag_samples)
 
-    pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
+        p1_char = p1_char_samples[p1_char_i].replace("\n", " ")
+        p1_tag = p1_tag_samples[p1_tag_i]
+        p2_char = p2_char_samples[p2_char_i].replace("\n", " ")
+        p2_tag = p2_tag_samples[p2_tag_i]
 
-    # reader = easyocr.Reader(['en'])
+        #3 frame
+        frame_at_start = g[-1]
 
-    for f,val,image in sorted_start_times:
-        datetime_start_time = datetime.timedelta(seconds=f)
-        print(f"Game start at : {datetime_start_time}. Conf Value: {val}")
-        # cv.imshow(f"{f}", image)
-        # key = cv.waitKey(0) & 0xFF
-        # if key == ord('s'):
-        #     cv.imwrite(f"C:/Users/zscot/Videos/vodfixer/{f}.png", image)
-        cv.destroyAllWindows()
+        frame_info = {}
+        frame_info['frame number'] = starting_frame_number
+        frame_info['p1 info'] = (p1_char, p1_tag)
+        frame_info['p2 info'] = (p2_char, p2_tag)
+        frame_info['frame'] = frame_at_start
 
-        print(scrape_keyframe(image))
-        # cv.imshow(f"{datetime_start_time}", image)
-        # key = cv.waitKey(0) & 0xFF
+        final_starts.append(frame_info)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed: {elapsed_time}")
+
+    file_stem = Path(source_vid_path).stem
+    dir_name = Path("./sheets/" + file_stem)
+
+    Path.mkdir(dir_name, parents=True, exist_ok=True)
+
+    csv_file = Path(str(dir_name) + "/" + file_stem + ".csv")
+
+    f = open(csv_file, 'w', newline='')
+
+    writer = csv.writer(f)
+
+    writer.writerow([str(Path(source_vid_path).resolve())])
+    writer.writerow(["SET #", "ROUND", "STARTING FRAME", "PLAYER 1", "P1 TAG", "P1 CHARACTER", "PLAYER 2", "P2 TAG", "P2 CHARACTER"])
+
+    for s in final_starts:
+        td = datetime.timedelta(seconds=(s['frame number']/60)).seconds
+        hours, rem = divmod(td, 3600)
+        minutes, seconds = divmod(rem, 60)
+        start_hh_tt_ss = f"{hours:02}:{minutes:02}:{seconds:02}"
+        writer.writerow([
+            '', '', start_hh_tt_ss, '', s['p1 info'][1], s['p1 info'][0], '', s['p2 info'][1], s['p2 info'][0]
+        ])
+        print(f"{s['frame number']}: {s['p1 info']}, {s['p2 info']}")
+
+    f.close()
+    
+
+

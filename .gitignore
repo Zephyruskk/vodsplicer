@@ -4,3 +4,4 @@ media/*
 *.png
 *.mp4
 test.py
+sheets/*
