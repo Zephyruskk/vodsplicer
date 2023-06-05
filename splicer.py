@@ -1,5 +1,5 @@
 import datetime
-import csv
+import csv, sys
 from pathlib import Path
 import subprocess
 
@@ -10,6 +10,7 @@ def trim_video(source_file, start_time, end_time, output_file_name):
         '-ss', start_time,
         '-to', end_time,
         '-c', 'copy', 
+        '-y',
         output_file_name
     ]
 
@@ -34,20 +35,20 @@ def load_csv(path):
 
     return (Path(source_video_file[0]), rows)
 
-# sample = [
-#     ['1','Losers Round 4','00:01:28','ksg','DRHANSWEEP','STEVE','Shard','267 152 46','MARIO'],
-#     ['1','Losers Round 4','00:06:28','ksg','DRHANSWEEP','STEVE','Shard','267 152 46','MARIO'],
-#     ['2','Losers Finals','00:12:22','GameCube','GameCube','GANONDORF','Shard','267 152 46','MARIO'],
-#     ['2','Losers Finals','00:17:18','GameCube','GameCube','GANONDORF','Shard','267 152 46','MARIO'],
-#     ['2','Losers Finals','00:20:21','GameCube','GameCube','GANONDORF','Shard','267 152 46','MARIO'],
-#     ['2','Losers Finals','00:22:50','GameCube','GameCube','GANONDORF','Shard','267 152 46','MARIO'],
-# ]
 
 def main():
 
-    temp = Path("./sheets/sample_0001/sample_0001.csv")
-    source_file, games = load_csv(temp)
-    
+    if len(sys.argv) > 1:
+        csv_path = Path(sys.argv[1])
+        if not csv_path.exists():
+            print(f"{str(csv_path)} was not found!") 
+            sys.exit(2)
+    else:
+        print("Please pass a target csv file as an argument after \'python splicer.py\'")
+        sys.exit(1)       
+
+    source_file, games = load_csv(csv_path)
+
     sets = []
     s = 0
     for i,g in enumerate(games[:-1]):
@@ -76,7 +77,7 @@ def main():
         cmd['end time'] = str(end_dt)
 
         output_filename = f"{s[0][1].replace(' ', '')}_{s[0][3]}-v-{s[0][6]}.mkv"
-        output_file_p = source_file.parent / output_filename
+        output_file_p = csv_path.parent / output_filename
         cmd['output file'] = str(output_file_p)
         cmds.append(cmd)
 

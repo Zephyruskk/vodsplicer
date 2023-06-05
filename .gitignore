@@ -5,3 +5,7 @@ media/*
 *.mp4
 test.py
 sheets/*
+!media/p1.png
+!media/p2.png
+!media/p3.png
+!media/p4.png

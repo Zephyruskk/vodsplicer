@@ -32,7 +32,7 @@ batch_size = 16 # how many frames get checked at once (thread count!)
 batch_item_length = 30 # frames long
 
 # file paths
-source_vid_path = "./media/sample_0001.mkv"
+# source_vid_path = "./media/sample_0001.mkv"
 go_path = "./media/go.png"
 p1_path = "./media/p1.png"
 p2_path = "./media/p2.png"
@@ -69,10 +69,10 @@ def process_frame(frame, frame_number, templates, region_of_interest):
 ################################################################################################################################
 ################################################################################################################################
 
-def process_video():
+def process_video(vid_path):
     global fps, frame_count, game_starts
 
-    capture = cv.VideoCapture(source_vid_path)
+    capture = cv.VideoCapture(vid_path)
     
     # reading in templates
     go_template = cv.imread(go_path)
@@ -194,10 +194,19 @@ def average_string(group):
 
 if __name__ == '__main__':
     pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
+   
+    if len(sys.argv) > 1:
+        source_vid_path = Path(sys.argv[1])
+        if not source_vid_path.exists():
+            print(f"{str(source_vid_path)} was not found!") 
+            sys.exit(2)
+    else:
+        print("Please pass a target csv file as an argument after \'python splicer.py\'")
+        sys.exit(1) 
 
     start_time = time.time()
 
-    process_video()
+    process_video(str(source_vid_path.resolve()))
 
     sorted_start_times = sorted(game_starts, key=lambda x: x[0])
 
@@ -257,7 +266,7 @@ if __name__ == '__main__':
     elapsed_time = end_time - start_time
     print(f"Elapsed: {elapsed_time}")
 
-    file_stem = Path(source_vid_path).stem
+    file_stem = source_vid_path.stem
     dir_name = Path("./sheets/" + file_stem)
 
     Path.mkdir(dir_name, parents=True, exist_ok=True)
@@ -268,7 +277,7 @@ if __name__ == '__main__':
 
     writer = csv.writer(f)
 
-    writer.writerow([str(Path(source_vid_path).resolve())])
+    writer.writerow([str(source_vid_path.resolve())])
     writer.writerow(["SET #", "ROUND", "STARTING FRAME", "PLAYER 1", "P1 TAG", "P1 CHARACTER", "PLAYER 2", "P2 TAG", "P2 CHARACTER"])
 
     for s in final_starts:
