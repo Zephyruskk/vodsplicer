@@ -13,15 +13,15 @@ def trim_video(source_file, start_time, end_time, output_file_name):
         '-y',
         output_file_name
     ]
-
-    subprocess.run(cmd)
+    print(cmd)
+    # subprocess.run(cmd)
 
 def convert_to_dt(time: str):
     hours, minutes, seconds = map(int, time.split(':'))
     td = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
     return td
 
-def load_csv(path):
+def load_game_csv(path):
     f = open(path)
     r = csv.reader(f)
 
@@ -32,8 +32,48 @@ def load_csv(path):
             source_video_file = row
         if i > 1:
             rows.append(row)
+    
+    f.close()
 
     return (Path(source_video_file[0]), rows)
+
+def update_tags_db(games):
+    tags_dict = {}
+    try:
+        f = open("./sheets/tag_tracker.csv", 'r', newline='')
+        rows = csv.reader(f)
+        for row in rows:
+            if row:
+                tags = row[1:]
+                tags_dict[row[0]] = tags
+        f.close()
+    except:
+        print('Tag tracker not found! It will be made for you.')
+        
+    
+    names_tags = [(g[3], g[4]) for g in games]
+    names_tags.extend([(g[6], g[7]) for g in games])
+
+    for name, tag in names_tags:
+        if name in tags_dict.keys():
+            if tag not in tags_dict[name]:
+                tags_dict[name].append(tag)
+        else:
+            tags_dict[name] = [tag]
+    
+    # some dictionary comprehension, as a treat
+    sorted_tags_dict = {k: tags_dict[k] for k in sorted(tags_dict, 
+                                                        key=lambda x: x.lower())}
+
+    f = open("./sheets/tag_tracker.csv", 'w', newline='')
+    writer = csv.writer(f)
+
+    for k,v in sorted_tags_dict.items():
+        write_row = [k]
+        write_row.extend(v)
+        writer.writerow(write_row)
+    f.close()
+    
 
 
 def main():
@@ -47,7 +87,8 @@ def main():
         print("Please pass a target csv file as an argument after \'python splicer.py\'")
         sys.exit(1)       
 
-    source_file, games = load_csv(csv_path)
+    source_file, games = load_game_csv(csv_path)
+    update_tags_db(games)
 
     sets = []
     s = 0
