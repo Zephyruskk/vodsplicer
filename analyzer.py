@@ -280,13 +280,33 @@ if __name__ == '__main__':
     writer.writerow([str(source_vid_path.resolve())])
     writer.writerow(["SET #", "ROUND", "STARTING FRAME", "PLAYER 1", "P1 TAG", "P1 CHARACTER", "PLAYER 2", "P2 TAG", "P2 CHARACTER"])
 
+    t = open("./sheets/tag_tracker.csv", 'r', newline='')
+    tag_rows = csv.reader(t)
+
+    player_names = {}
+    tags_dict = {}
+    for i,row in enumerate(tag_rows):
+        player_names[i] = row[0]
+        for tag in row[1:]:
+            tags_dict[tag] = i
+
     for s in final_starts:
+        p1_name, p2_name = '',''
+        player1_tag, player2_tag = s['p1 info'][1],s['p2 info'][1]
+
+        for tag,i in tags_dict.items():
+            if (player1_tag in tag) and Levenshtein.distance(player1_tag, tag) < 3:
+                p1_name = player_names[i]
+            if (player2_tag in tag) and Levenshtein.distance(player2_tag, tag) < 3:
+                p2_name = player_names[i]
+
+
         td = datetime.timedelta(seconds=(s['frame number']/60)).seconds
         hours, rem = divmod(td, 3600)
         minutes, seconds = divmod(rem, 60)
         start_hh_tt_ss = f"{hours:02}:{minutes:02}:{seconds:02}"
         writer.writerow([
-            '', '', start_hh_tt_ss, '', s['p1 info'][1], s['p1 info'][0], '', s['p2 info'][1], s['p2 info'][0]
+            '', '', start_hh_tt_ss, '', player1_tag, s['p1 info'][0], '', player2_tag, s['p2 info'][0]
         ])
         print(f"{s['frame number']}: {s['p1 info']}, {s['p2 info']}")
 
