@@ -5,11 +5,13 @@ import pytesseract
 import pandas as pd
 import threading
 import multiprocessing as mp
-import Levenshtein
+from Levenshtein import distance, ratio
 from pathlib import Path
 
 fps, frame_count = 0,0 # globals, for later
 temp_threshold = 0.75 # template threshold, be above this to clock player icons
+
+TAG_SIMILARITY_CUTOFF = 0.85
 
 # all coords are x1,y1,x2,y2
 
@@ -182,7 +184,7 @@ def average_string(group):
         total_dist = 0
         for j,string2 in enumerate(group):
             if i != j:
-                distance = Levenshtein.distance(string1, string2)
+                distance = distance(string1, string2)
                 total_dist += distance
         avg_dist = total_dist / (len(group) - 1)
         avg_distances.append(avg_dist)
@@ -290,27 +292,46 @@ if __name__ == '__main__':
         for tag in row[1:]:
             tags_dict[tag] = i
 
+    write_rows = []
     for s in final_starts:
         p1_name, p2_name = '',''
         player1_tag, player2_tag = s['p1 info'][1],s['p2 info'][1]
 
         for tag,i in tags_dict.items():
-            if (player1_tag in tag) and Levenshtein.distance(player1_tag, tag) < 3:
+            if (tag in player1_tag) and ratio(player1_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
                 p1_name = player_names[i]
-            if (player2_tag in tag) and Levenshtein.distance(player2_tag, tag) < 3:
+            if (tag in player2_tag) and ratio(player2_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
                 p2_name = player_names[i]
 
 
         td = datetime.timedelta(seconds=(s['frame number']/60)).seconds
-        hours, rem = divmod(td, 3600)
-        minutes, seconds = divmod(rem, 60)
-        start_hh_tt_ss = f"{hours:02}:{minutes:02}:{seconds:02}"
-        writer.writerow([
-            '', '', start_hh_tt_ss, '', player1_tag, s['p1 info'][0], '', player2_tag, s['p2 info'][0]
+        write_rows.append([
+            '', '', td, p1_name, player1_tag, s['p1 info'][0], p2_name, player2_tag, s['p2 info'][0]
         ])
         print(f"{s['frame number']}: {s['p1 info']}, {s['p2 info']}")
+    
+    set_no = 0
+    game_count = 0
+    for i,r in enumerate(write_rows[:-1]):
+        r[0] = set_no
+        game_count += 1
 
-    f.close()
+        _,_,this_td,_,this_p1_tag,this_p1_char,_,this_p2_tag,this_p2_char = r
+        _,_,next_td,_,next_p1_tag,next_p1_char,_,next_p2_tag,next_p2_char = write_rows[i+1]
+
+        # if either of the tags change, 
+        if (not ratio(this_p1_tag, next_p1_tag, score_cutoff=TAG_SIMILARITY_CUTOFF) or 
+            not ratio(this_p2_tag, next_p2_tag, score_cutoff=TAG_SIMILARITY_CUTOFF) ):
+            if game_count > 1: # and it has also been more than one game since the last set ended
+                set_no += 1 # start labelling games as the subsequent set
+                game_count = 0 
+            
+    
+    write_rows[-1][0] = set_no
+
+    for row in write_rows:
+        writer.writerow(row=row)
+
     
 
-
+    f.close()
