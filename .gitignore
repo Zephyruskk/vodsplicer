@@ -13,3 +13,4 @@ vodfixer_gui.py
 test2.py
 *.json
 walkthrough.py
+!client_secrets.json

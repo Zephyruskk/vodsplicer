@@ -1,10 +1,8 @@
-import sys, datetime, time, logging, csv
+import sys, datetime, time, csv
 import cv2 as cv
 import numpy as np
 import pytesseract
-import pandas as pd
 import threading
-import multiprocessing as mp
 from Levenshtein import distance, ratio 
 from pathlib import Path
 
@@ -195,7 +193,11 @@ def average_string(group):
 ################################################################################################################################
 
 if __name__ == '__main__':
-    pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
+
+    with open("./tesseract_path.txt", 'r') as f:
+        tesseract_path = f.readline()
+    
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
    
     if len(sys.argv) > 1:
         source_vid_path = Path(sys.argv[1])
@@ -203,7 +205,7 @@ if __name__ == '__main__':
             print(f"{str(source_vid_path)} was not found!") 
             sys.exit(2)
     else:
-        print("Please pass a target csv file as an argument after \'python splicer.py\'")
+        print("Please pass a target video file as an argument after \'python analyzer.py\'")
         sys.exit(1) 
 
     start_time = time.time()
@@ -211,6 +213,11 @@ if __name__ == '__main__':
     process_video(str(source_vid_path.resolve()))
 
     sorted_start_times = sorted(game_starts, key=lambda x: x[0])
+
+    if not sorted_start_times:
+        print(f"No game starts found in {source_vid_path}!")
+        print("Exiting...")
+        sys.exit()
 
     # scrape keyframes w pytesseract
     for i,frame in enumerate(sorted_start_times):

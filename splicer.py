@@ -14,7 +14,7 @@ def trim_video(source_file, start_time, end_time, output_file_name, game_info, u
         output_file_name
     ]
     print(cmd)
-    # subprocess.run(cmd)
+    subprocess.run(cmd)
 
     if upload_to_yt:
         upload_to_youtube(output_file_name, game_info)
