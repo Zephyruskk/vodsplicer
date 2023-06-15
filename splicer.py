@@ -3,7 +3,7 @@ import csv, sys
 from pathlib import Path
 import subprocess
 
-def trim_video(source_file, start_time, end_time, output_file_name):
+def trim_video(source_file, start_time, end_time, output_file_name, game_info, upload_to_yt):
     cmd = [
         'ffmpeg', 
         '-i', source_file, 
@@ -15,6 +15,26 @@ def trim_video(source_file, start_time, end_time, output_file_name):
     ]
     print(cmd)
     # subprocess.run(cmd)
+
+    if upload_to_yt:
+        upload_to_youtube(output_file_name, game_info)
+
+def upload_to_youtube(file_to_upload, game_info):
+
+    title = f"{game_info['round']} -- {game_info['p1_tag']} {game_info['p1_chars']} vs. {game_info['p2_tag']} {game_info['p2_chars']}"
+
+    cmd = [
+        'python',
+        'upload_video.py',
+        f"--file={file_to_upload}",
+        f"--title={title}",
+        "--keywords=Super Smash Bros. Ultimate, Tournament",
+        "--category=20",
+        "--privacyStatus=private",
+    ]
+
+    print(cmd)
+    p = subprocess.Popen(cmd)
 
 def convert_to_dt(time: str):
     hours, minutes, seconds = map(int, time.split(':'))
@@ -77,15 +97,18 @@ def update_tags_db(games):
 
 
 def main():
-
+    upload_to_yt = False
     if len(sys.argv) > 1:
         csv_path = Path(sys.argv[1])
         if not csv_path.exists():
             print(f"{str(csv_path)} was not found!") 
             sys.exit(2)
+        if len(sys.argv) > 2:
+            if sys.argv[2] == '--upload':
+                upload_to_yt = True
     else:
         print("Please pass a target csv file as an argument after \'python splicer.py\'")
-        sys.exit(1)       
+        sys.exit(1)      
 
     source_file, games = load_game_csv(csv_path)
     update_tags_db(games)
@@ -119,12 +142,41 @@ def main():
 
         output_filename = f"{s[0][1].replace(' ', '')}_{s[0][3]}-v-{s[0][6]}.mkv"
         output_file_p = csv_path.parent / output_filename
-        cmd['output file'] = str(output_file_p)
+        cmd['output file'] = str(output_file_p.resolve())
+        
+        p1_chars = []
+        p2_chars = []
+        for g in s:
+            if g[5] not in p1_chars:
+                p1_chars.append(g[5])
+            if g[8] not in p2_chars:
+                p2_chars.append(g[8])
+        p1_chars_str = '('
+        p1_chars_str += p1_chars[0]
+        for c in p1_chars[1:]:
+            p1_chars_str += f", {c}"
+        p1_chars_str += ')'
+
+        p2_chars_str = '('
+        p2_chars_str += p2_chars[0]
+        for c in p2_chars[1:]:
+            p2_chars_str += f", {c}"
+        p2_chars_str += ')'
+
+        cmd['game info'] = {
+            'round': s[0][1],
+            'p1_tag': s[0][3],
+            'p1_chars': p1_chars_str,
+            'p2_tag': s[0][6],
+            'p2_chars': p2_chars_str
+        }
         cmds.append(cmd)
 
 
     for cmd in cmds:
-        trim_video(cmd['source file'], cmd['start time'], cmd['end time'], cmd['output file'])
+        trim_video(cmd['source file'], cmd['start time'], cmd['end time'], cmd['output file'], cmd['game info'], upload_to_yt=upload_to_yt)
+
+
     
     print('\n\nSplicer done!')
 

@@ -5,7 +5,7 @@ import pytesseract
 import pandas as pd
 import threading
 import multiprocessing as mp
-from Levenshtein import distance, ratio
+from Levenshtein import distance, ratio 
 from pathlib import Path
 
 fps, frame_count = 0,0 # globals, for later
@@ -184,8 +184,8 @@ def average_string(group):
         total_dist = 0
         for j,string2 in enumerate(group):
             if i != j:
-                distance = distance(string1, string2)
-                total_dist += distance
+                dist = distance(string1, string2)
+                total_dist += dist
         avg_dist = total_dist / (len(group) - 1)
         avg_distances.append(avg_dist)
     
@@ -285,6 +285,7 @@ if __name__ == '__main__':
     t = open("./sheets/tag_tracker.csv", 'r', newline='')
     tag_rows = csv.reader(t)
 
+    # extract previously saved tags from csv
     player_names = {}
     tags_dict = {}
     for i,row in enumerate(tag_rows):
@@ -292,6 +293,7 @@ if __name__ == '__main__':
         for tag in row[1:]:
             tags_dict[tag] = i
 
+    # autofill player names
     write_rows = []
     for s in final_starts:
         p1_name, p2_name = '',''
@@ -304,12 +306,13 @@ if __name__ == '__main__':
                 p2_name = player_names[i]
 
 
-        td = datetime.timedelta(seconds=(s['frame number']/60)).seconds
+        td = datetime.timedelta(seconds=(s['frame number']//60))
         write_rows.append([
-            '', '', td, p1_name, player1_tag, s['p1 info'][0], p2_name, player2_tag, s['p2 info'][0]
+            '', '', str(td), p1_name, player1_tag, s['p1 info'][0], p2_name, player2_tag, s['p2 info'][0]
         ])
         print(f"{s['frame number']}: {s['p1 info']}, {s['p2 info']}")
     
+    # autofill set #
     set_no = 0
     game_count = 0
     for i,r in enumerate(write_rows[:-1]):
@@ -330,7 +333,7 @@ if __name__ == '__main__':
     write_rows[-1][0] = set_no
 
     for row in write_rows:
-        writer.writerow(row=row)
+        writer.writerow(row)
 
     
 

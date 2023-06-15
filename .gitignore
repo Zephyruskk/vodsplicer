@@ -10,3 +10,6 @@ sheets/*
 !media/p3.png
 !media/p4.png
 vodfixer_gui.py
+test2.py
+*.json
+walkthrough.py
