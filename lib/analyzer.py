@@ -294,16 +294,22 @@ if __name__ == '__main__':
     writer.writerow([str(source_vid_path.resolve())])
     writer.writerow(["SET #", "ROUND", "STARTING FRAME", "PLAYER 1", "P1 TAG", "P1 CHARACTER", "PLAYER 2", "P2 TAG", "P2 CHARACTER"])
 
-    t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'r', newline='')
-    tag_rows = csv.reader(t)
+    try:
+        # extract previously saved tags from csv
+        player_names = {}
+        tags_dict = {}
 
-    # extract previously saved tags from csv
-    player_names = {}
-    tags_dict = {}
-    for i,row in enumerate(tag_rows):
-        player_names[i] = row[0]
-        for tag in row[1:]:
-            tags_dict[tag] = i
+        t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'r', newline='')
+        tag_rows = csv.reader(t)
+        
+        for i,row in enumerate(tag_rows):
+            player_names[i] = row[0]
+            for tag in row[1:]:
+                tags_dict[tag] = i
+    except:
+        print('tag_tracker.csv not found, creating it now!')
+        t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'w')
+        t.close()
 
     # autofill player names
     write_rows = []
@@ -311,11 +317,12 @@ if __name__ == '__main__':
         p1_name, p2_name = '',''
         player1_tag, player2_tag = s['p1 info'][1],s['p2 info'][1]
 
-        for tag,i in tags_dict.items():
-            if (tag in player1_tag) and ratio(player1_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
-                p1_name = player_names[i]
-            if (tag in player2_tag) and ratio(player2_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
-                p2_name = player_names[i]
+        if tags_dict and player_names:
+            for tag,i in tags_dict.items():
+                if (tag in player1_tag) and ratio(player1_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
+                    p1_name = player_names[i]
+                if (tag in player2_tag) and ratio(player2_tag, tag, score_cutoff=TAG_SIMILARITY_CUTOFF):
+                    p2_name = player_names[i]
 
 
         td = datetime.timedelta(seconds=(s['frame number']//60))

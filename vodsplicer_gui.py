@@ -1,9 +1,21 @@
 import sys
 import threading
 import tkinter as tk
+import importlib
 from tkinter import filedialog
 from subprocess import Popen, PIPE, STDOUT
 from pathlib import Path
+
+required_libraries = [
+    'Levenshtein', 
+    'Pillow', 
+    'pytesseract',
+    'opencv-python',
+    'google-api-python-client',
+    'google-auth-oauthlib',
+    'google-auth-httplib2',
+    'oauth2client',
+]
 
 vodfixer_dir = Path(__file__).resolve().parent
 sheets_path = vodfixer_dir / 'sheets'
@@ -75,3 +87,14 @@ if __name__ == "__main__":
     app = Application()
     sys.stdout = app.output_text
     app.mainloop()
+
+    for library in required_libraries:
+        try:
+            importlib.import_module(library)
+        except ImportError:
+            print(f"Error: {library} is not installed.")
+            # You can choose to exit the script or perform alternative actions here
+
+    # If all libraries are imported successfully, continue with the rest of your script
+    print("All necessary libraries are installed!")
+
