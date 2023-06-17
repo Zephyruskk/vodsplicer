@@ -1,21 +1,9 @@
 import sys
 import threading
 import tkinter as tk
-import importlib
 from tkinter import filedialog
 from subprocess import Popen, PIPE, STDOUT
 from pathlib import Path
-
-required_libraries = [
-    'Levenshtein', 
-    'Pillow', 
-    'pytesseract',
-    'opencv-python',
-    'google-api-python-client',
-    'google-auth-oauthlib',
-    'google-auth-httplib2',
-    'oauth2client',
-]
 
 vodfixer_dir = Path(__file__).resolve().parent
 sheets_path = vodfixer_dir / 'sheets'
