@@ -7,7 +7,7 @@ Therefore, I wrote a script that could watch the video for me and tell me when m
 
 I am going to assume basic computer literacy, but do my best to be accomodating. I have experience with Windows and Ubuntu -- hopefully the Linux stuff can carry over to MacOS.
 
-**DISCLAIMER**: If your VOD is recorded at a quality other than 1080p, or changes the size/aspect ratio of the actual gameplay, there may need to be some adjustments made to the script to work properly. Please feel free to contact me if you have any questions or worries of this nature at @zephyruskk on Twitter and @zephyrsk on Discord.
+**DISCLAIMER**: This software assumes that Smash Ultimate is recorded at 1080x1920, and is fullscreen while the beginning of games. If your VOD is recorded at a quality other than 1080p, or changes the size/aspect ratio of the actual gameplay, there may need to be some adjustments made to the script to work properly. Please feel free to contact me if you have any questions or worries of this nature at @zephyruskk on Twitter and @zephyrsk on Discord.
 
 ## Requirements
 ### **Python**
@@ -63,10 +63,12 @@ Before anything, please feel free to contact me if you have any issues with this
 
 1. Download this repository! Click `<> Code` and then "Download ZIP". Extract this folder (on Windows, `Extract all`) and move the resulting folder to a safe, accessible location. I recommend the Videos directory in whatever OS you are using. 
 
-2. If you have not added Tesseract to your PATH, navigate into the base directory of `vodsplicer-main` and find the file called `tesseract_path.txt`. If it is not present, create it! Place the path to your Tesseract installation into this file. There shouldn't be anything else in this file, just a single line. 
+2. If you have not added Tesseract to your PATH, navigate into the `user_info` directory and find the file called `tesseract_path.txt`. If it is not present, create it! Place the path to your Tesseract installation into this file. There shouldn't be anything else in this file, just a single line. 
 
-3. Copy and paste the following instructions into a terminal and hit enter (if needed). You can open a terminal in Windows by hitting the Windows key and typing "cmd". In Ubuntu, you can do this with `Ctrl+Alt+t`. 
+3. Run `install_pip_packages.py` with Python to download this project's dependencies  
+If you prefer to do this manually for one reason or another, here are the packages you need and how to install them. Copy and paste the following instructions into a terminal and hit enter (if needed). You can open a terminal in Windows by hitting the Windows key and typing "cmd". In Ubuntu, you can do this with `Ctrl+Alt+t`. 
 ```bash
+(If you choose not use the installer script)
 pip install Levenshtein
 pip install Pillow
 pip install pytesseract
@@ -76,7 +78,7 @@ pip install --upgrade google-auth-oauthlib google-auth-httplib2
 pip install oauth2client
 ```
 
-4. (Optional) If you want to use the YouTube API aspect of this process, find the `client_secrets.json` file in the base directory of this project. It should look something like this
+4. (Optional) If you want to use the YouTube API aspect of this process, find the `client_secrets.json` file in the `user_info` directory of this project. It should look something like this
 ```json
 "client_id": "[[INSERT CLIENT ID HERE]]",
 "client_secret": "[[INSERT CLIENT SECRET HERE]]",
@@ -86,7 +88,7 @@ pip install oauth2client
 When you run the splicer with automatic uploads on, you will be required to log in to the account you want your VODs to be uploaded to. This should be an authenticated user on your Google Cloud project. 
 
 ## Usage
-To use this software, run `vodsplicer_gui.py`. There are a couple ways to do this. If you are on Windows, you can right click the file in File Explorer, and select run with Python (which may be called something like "Python 3.10"). The ubiquitous way to do this is to open a terminal session, navigate to the directory that holds `vodsplicer_gui.py` and enter "`python vodsplicer_gui.py`". Here is what the GUI should look like. 
+To use this software, run `vodsplicer_gui.py`. There are a couple ways to do this. If you are on Windows, you can right click the file in File Explorer, and select run with Python (which may be called something like "Python 3.10"). If you have multiple options for Python installations to use to run the file, you may come across compatability issues. I would recommend using the same distribution you used on `install_pip_packages.py`. Here is what the GUI should look like. 
 
 ![image](https://github.com/Zephyruskk/vodsplicer/assets/106562693/b5a67467-81d2-4268-9957-b2e7b0276bd6)
 
