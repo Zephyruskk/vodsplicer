@@ -3,7 +3,12 @@ import threading
 import tkinter as tk
 from tkinter import filedialog
 from subprocess import Popen, PIPE, STDOUT
+from pathlib import Path
 
+vodfixer_dir = Path(__file__).resolve().parent
+sheets_path = vodfixer_dir / 'sheets'
+analyzer_path = vodfixer_dir / 'analyzer.py'
+splicer_path = vodfixer_dir / 'splicer.py'
 
 class Application(tk.Tk):
     def __init__(self):
@@ -29,12 +34,12 @@ class Application(tk.Tk):
         self.grid_rowconfigure(3, weight=1)  # Allow the output_text widget to expand vertically
 
     def select_input_analyzer(self):
-        file_path = filedialog.askopenfilename()
+        file_path = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4 *.mov *.avi *.mkv *.wmv"), ("All Files", "*")])
         if file_path:
             self.run_analyzer(file_path)
 
     def select_input_splicer(self):
-        file_path = filedialog.askopenfilename(initialdir="./sheets")
+        file_path = filedialog.askopenfilename(initialdir=str(sheets_path), filetypes=[("CSV Files", "*.csv")])
         if file_path:
             self.run_splicer(file_path)
 
@@ -54,12 +59,12 @@ class Application(tk.Tk):
 
     def run_analyzer(self, file_path):
         self.update_output_text(f"Analyzing {file_path}\nPlease be patient as this may take a while...\n")
-        command = ["python", "analyzer.py", file_path]
+        command = ["python", str(analyzer_path), file_path]
         process = Popen(command, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
         threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
 
     def run_splicer(self, file_name):
-        command = ["python", "splicer.py", file_name]
+        command = ["python", str(splicer_path), file_name]
         if self.upload_var.get():
             command.append("--upload")
         process = Popen(command, stdout=PIPE, stderr=STDOUT, universal_newlines=True)

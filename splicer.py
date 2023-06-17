@@ -3,6 +3,8 @@ import csv, sys
 from pathlib import Path
 import subprocess
 
+vodfixer_dir = Path(__file__).resolve().parent
+
 def trim_video(source_file, start_time, end_time, output_file_name, game_info, upload_to_yt):
     cmd = [
         'ffmpeg', 
@@ -23,9 +25,11 @@ def upload_to_youtube(file_to_upload, game_info):
 
     title = f"{game_info['round']} -- {game_info['p1_tag']} {game_info['p1_chars']} vs. {game_info['p2_tag']} {game_info['p2_chars']}"
 
+    upload_to_youtube_path = vodfixer_dir / "upload_video.py"
+
     cmd = [
         'python',
-        'upload_video.py',
+        str(upload_to_youtube_path),
         f"--file={file_to_upload}",
         f"--title={title}",
         "--keywords=Super Smash Bros. Ultimate, Tournament",
@@ -42,7 +46,13 @@ def convert_to_dt(time: str):
     return td
 
 def load_game_csv(path):
-    f = open(path)
+    try:
+        f = open(path)
+    except Exception as e:
+        # print(e)
+        print(f"Unable to open {path}")
+        exit()
+
     r = csv.reader(f)
 
     source_video_file = None
@@ -60,7 +70,7 @@ def load_game_csv(path):
 def update_tags_db(games):
     tags_dict = {}
     try:
-        f = open("./sheets/tag_tracker.csv", 'r', newline='')
+        f = open(vodfixer_dir / "sheets/tag_tracker.csv", 'r', newline='')
         rows = csv.reader(f)
         for row in rows:
             if row:
@@ -85,7 +95,7 @@ def update_tags_db(games):
     sorted_tags_dict = {k: tags_dict[k] for k in sorted(tags_dict, 
                                                         key=lambda x: x.lower())}
 
-    f = open("./sheets/tag_tracker.csv", 'w', newline='')
+    f = open(vodfixer_dir / "sheets/tag_tracker.csv", 'w', newline='')
     writer = csv.writer(f)
 
     for k,v in sorted_tags_dict.items():
@@ -98,6 +108,8 @@ def update_tags_db(games):
 
 def main():
     upload_to_yt = False
+
+    # if you're reading this argument parsing -- i know it's bad
     if len(sys.argv) > 1:
         csv_path = Path(sys.argv[1])
         if not csv_path.exists():
@@ -110,6 +122,7 @@ def main():
         print("Please pass a target csv file as an argument after \'python splicer.py\'")
         sys.exit(1)      
 
+    csv_path = csv_path.resolve()
     source_file, games = load_game_csv(csv_path)
     update_tags_db(games)
 
