@@ -16,7 +16,7 @@ from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 from pathlib import Path
 
-vodfixer_dir = Path(__file__).resolve().parent
+vodfixer_dir = Path(__file__).resolve().parent.parent
 
 # Explicitly tell the underlying HTTP transport library not to retry, since
 # we are handling retry logic ourselves.
@@ -43,7 +43,7 @@ RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 # For more information about the client_secrets.json file format, see:
 #   https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 
-CLIENT_SECRETS_PATH = vodfixer_dir / "client_secrets.json"
+CLIENT_SECRETS_PATH = vodfixer_dir / "user_info/client_secrets.json"
 CLIENT_SECRETS_FILE = str(CLIENT_SECRETS_PATH.resolve())
 
 # This OAuth 2.0 access scope allows an application to upload files to the

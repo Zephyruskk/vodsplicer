@@ -34,15 +34,13 @@ batch_item_length = 30 # frames long
 # file paths
 # source_vid_path = "./media/sample_0001.mkv"
 
-vodfixer_dir = Path(__file__).resolve().parent
+vodfixer_dir = Path(__file__).resolve().parent.parent
 
 # go_path = "./media/go.png"
-p1_path = (vodfixer_dir / "media/p1.png").resolve()
-p2_path = (vodfixer_dir / "media/p2.png").resolve()
-p3_path = (vodfixer_dir / "media/p3.png").resolve()
-p4_path = (vodfixer_dir / "media/p4.png").resolve()
-
-
+p1_path = (vodfixer_dir / "lib/media/p1.png").resolve()
+p2_path = (vodfixer_dir / "lib/media/p2.png").resolve()
+p3_path = (vodfixer_dir / "lib/media/p3.png").resolve()
+p4_path = (vodfixer_dir / "lib/media/p4.png").resolve()
 
 # state variables, [frame number, confidence value, np frame array]
 game_starts = []
@@ -199,10 +197,14 @@ def average_string(group):
 
 if __name__ == '__main__':
 
-    with open(vodfixer_dir / "./tesseract_path.txt", 'r') as f:
+    with open(vodfixer_dir / "./user_info/tesseract_path.txt", 'r') as f:
         tesseract_path = f.readline()
     
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    if Path(tesseract_path).exists() and Path(tesseract_path).name == 'tesseract.exe':
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    else:
+        print('Tesseract executable not found. Please check the user_info directory.')
+        exit()
    
     if len(sys.argv) > 1:
         source_vid_path = Path(sys.argv[1])
@@ -299,7 +301,7 @@ if __name__ == '__main__':
         player_names = {}
         tags_dict = {}
 
-        t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'r', newline='')
+        t = open(vodfixer_dir / "user_info/tag_tracker.csv", 'r', newline='')
         tag_rows = csv.reader(t)
         
         for i,row in enumerate(tag_rows):
@@ -308,7 +310,7 @@ if __name__ == '__main__':
                 tags_dict[tag] = i
     except:
         print('tag_tracker.csv not found, creating it now!')
-        t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'w')
+        t = open(vodfixer_dir / "user_info/tag_tracker.csv", 'w')
         t.close()
 
     # autofill player names

@@ -19,8 +19,8 @@ required_libraries = [
 
 vodfixer_dir = Path(__file__).resolve().parent
 sheets_path = vodfixer_dir / 'sheets'
-analyzer_path = vodfixer_dir / 'analyzer.py'
-splicer_path = vodfixer_dir / 'splicer.py'
+analyzer_path = vodfixer_dir / 'lib/analyzer.py'
+splicer_path = vodfixer_dir / 'lib/splicer.py'
 
 class Application(tk.Tk):
     def __init__(self):
@@ -87,14 +87,4 @@ if __name__ == "__main__":
     app = Application()
     sys.stdout = app.output_text
     app.mainloop()
-
-    for library in required_libraries:
-        try:
-            importlib.import_module(library)
-        except ImportError:
-            print(f"Error: {library} is not installed.")
-            # You can choose to exit the script or perform alternative actions here
-
-    # If all libraries are imported successfully, continue with the rest of your script
-    print("All necessary libraries are installed!")
 
