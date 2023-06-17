@@ -33,11 +33,16 @@ batch_item_length = 30 # frames long
 
 # file paths
 # source_vid_path = "./media/sample_0001.mkv"
-go_path = "./media/go.png"
-p1_path = "./media/p1.png"
-p2_path = "./media/p2.png"
-p3_path = "./media/p3.png"
-p4_path = "./media/p4.png"
+
+vodfixer_dir = Path(__file__).resolve().parent
+
+# go_path = "./media/go.png"
+p1_path = (vodfixer_dir / "media/p1.png").resolve()
+p2_path = (vodfixer_dir / "media/p2.png").resolve()
+p3_path = (vodfixer_dir / "media/p3.png").resolve()
+p4_path = (vodfixer_dir / "media/p4.png").resolve()
+
+
 
 # state variables, [frame number, confidence value, np frame array]
 game_starts = []
@@ -75,15 +80,15 @@ def process_video(vid_path):
     capture = cv.VideoCapture(vid_path)
     
     # reading in templates
-    go_template = cv.imread(go_path)
-    go_template = cv.cvtColor(go_template, cv.COLOR_BGR2GRAY)
-    p1_template = cv.imread(p1_path)
+    # go_template = cv.imread(go_path)
+    # go_template = cv.cvtColor(go_template, cv.COLOR_BGR2GRAY)
+    p1_template = cv.imread(str(p1_path))
     p1_template = cv.cvtColor(p1_template, cv.COLOR_BGR2GRAY)  # convert to grayscale
-    p2_template = cv.imread(p2_path)
+    p2_template = cv.imread(str(p2_path))
     p2_template = cv.cvtColor(p2_template, cv.COLOR_BGR2GRAY)  # convert to grayscale
-    p3_template = cv.imread(p3_path)
+    p3_template = cv.imread(str(p3_path))
     p3_template = cv.cvtColor(p3_template, cv.COLOR_BGR2GRAY)  # convert to grayscale
-    p4_template = cv.imread(p4_path)
+    p4_template = cv.imread(str(p4_path))
     p4_template = cv.cvtColor(p4_template, cv.COLOR_BGR2GRAY)  # convert to grayscale
 
     ## filling in video details ##
@@ -194,7 +199,7 @@ def average_string(group):
 
 if __name__ == '__main__':
 
-    with open("./tesseract_path.txt", 'r') as f:
+    with open(vodfixer_dir / "./tesseract_path.txt", 'r') as f:
         tesseract_path = f.readline()
     
     pytesseract.pytesseract.tesseract_cmd = tesseract_path
@@ -276,11 +281,11 @@ if __name__ == '__main__':
     print(f"Elapsed: {elapsed_time}")
 
     file_stem = source_vid_path.stem
-    dir_name = Path("./sheets/" + file_stem)
+    dir_name = vodfixer_dir / "sheets" / file_stem
 
     Path.mkdir(dir_name, parents=True, exist_ok=True)
 
-    csv_file = Path(str(dir_name) + "/" + file_stem + ".csv")
+    csv_file = dir_name / (file_stem + ".csv")
 
     f = open(csv_file, 'w', newline='')
 
@@ -289,7 +294,7 @@ if __name__ == '__main__':
     writer.writerow([str(source_vid_path.resolve())])
     writer.writerow(["SET #", "ROUND", "STARTING FRAME", "PLAYER 1", "P1 TAG", "P1 CHARACTER", "PLAYER 2", "P2 TAG", "P2 CHARACTER"])
 
-    t = open("./sheets/tag_tracker.csv", 'r', newline='')
+    t = open(vodfixer_dir / "sheets/tag_tracker.csv", 'r', newline='')
     tag_rows = csv.reader(t)
 
     # extract previously saved tags from csv
