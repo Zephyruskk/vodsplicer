@@ -106,3 +106,10 @@ The standard output of the scripts is supplied at the bottom of the GUI for debu
 
 ## Thank you!
 I hope you'll consider using this project for splicing your VODs. Again, please contact me @zephyrsk on Discord or @zephyruskk on Twitter with any questions or concerns. 
+
+## Credits
+OpenCV, Tesseract, and this project are licensed under Apache License 2.0. A copy of this can be found under `CREDITS/LICENSE`.
+  
+FFmpeg uses the GNU Lesser General Public License, version 2.1, which can be found on gnu.org.
+
+Copyright 2023 Zachary Scott
