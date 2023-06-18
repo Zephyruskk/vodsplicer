@@ -90,7 +90,7 @@ When you run the splicer with automatic uploads on, you will be required to log 
 ## Usage
 To use this software, run `vodsplicer_gui.py`. There are a couple ways to do this. If you are on Windows, you can right click the file in File Explorer, and select run with Python (which may be called something like "Python 3.10"). If you have multiple options for Python installations to use to run the file, you may come across compatability issues. I would recommend using the same distribution you used on `install_pip_packages.py`. Here is what the GUI should look like. 
 
-![image](https://github.com/Zephyruskk/vodsplicer/assets/106562693/b5a67467-81d2-4268-9957-b2e7b0276bd6)
+![image](https://github.com/Zephyruskk/vodsplicer/assets/106562693/628c4df6-1db8-4e37-906a-f5183bceb04a)
 
 `Select Input for Analyzer` is where you should start. Clicking this button will open your system's file explorer. Select the VOD that you want to splice. This process will probably take the longest out of any operation (except maybe uploading). It takes my laptop about 14-15 minutes to get through a 2 hour 50 minute VOD. **Please do not move your VOD from it files location until you are positive that each match has been spliced.**
 
